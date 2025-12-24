@@ -17,7 +17,7 @@ public partial class Produit
 
     public DateOnly? DateAjout { get; set; }
 
-    public bool? Disponible { get; set; }
+    public bool Disponible { get; set; }
 
     public virtual ICollection<DetailCommande> DetailCommandes { get; set; } = new List<DetailCommande>();
     // Clé étrangère vers Categorie

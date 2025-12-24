@@ -20,12 +20,59 @@ namespace WebApplicationAchats.Controllers
             _context = context;
         }
 
-        // GET: Produits - Accessible par tous les utilisateurs connectés
+        // GET: Produits
         [Authorize(Roles = "Admin,Manager,User")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchString, string? filter)
         {
-            var venteContext = _context.Produits.Include(p => p.Categorie).Include(p => p.Marque);
-            return View(await venteContext.ToListAsync());
+            var produits = _context.Produits
+                .Include(p => p.Categorie)
+                .Include(p => p.Marque)
+                .AsQueryable();
+
+            // Filtre par recherche (existant)
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                produits = produits.Where(p => p.Nom.Contains(searchString));
+            }
+
+            // Filtre par disponibilité (NOUVEAU)
+            if (filter == "disponible")
+            {
+                produits = produits.Where(p => p.Disponible == true);
+            }
+            else if (filter == "indisponible")
+            {
+                produits = produits.Where(p => p.Disponible == false);
+            }
+
+            ViewData["CurrentFilter"] = searchString;
+            ViewData["FilterDisponibilite"] = filter;
+            // Compteur de produits disponibles
+            var produitsDisponibles = await _context.Produits.Where(p => p.Disponible == true).CountAsync();
+            ViewBag.NombreDisponibles = produitsDisponibles;
+            // Statistiques par catégorie
+            ViewBag.StatsParCategorie = await _context.Produits
+        .Include(p => p.Categorie)
+        .GroupBy(p => p.Categorie.Nom)
+        .Select(g => new
+        {
+            Categorie = g.Key,
+            Total = g.Count()
+        })
+        .ToListAsync();
+            // Jointure LINQ
+            ViewBag.JoinProduitsCategories =
+        (from p in _context.Produits
+         join c in _context.Categories
+         on p.CategorieId equals c.CategorieId
+         select new
+         {
+             Produit = p.Nom,
+             Prix = p.Prix,
+             Categorie = c.Nom
+         }).ToList();
+
+            return View(await produits.ToListAsync());
         }
 
         // GET: Produits/Details/5 - Accessible par tous
