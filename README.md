@@ -2,8 +2,6 @@
 
 Application web complète de gestion des achats développée avec **ASP.NET Core MVC**, **Entity Framework Core** et **ASP.NET Core Identity** pour l'authentification et la gestion des rôles.
 
-
-
 ---
 
 ## 📋 Table des matières
@@ -16,8 +14,8 @@ Application web complète de gestion des achats développée avec **ASP.NET Core
 - [Configuration](#-configuration)
 - [Utilisation](#-utilisation)
 - [Gestion des rôles](#-gestion-des-rôles)
+- [Opérateurs LINQ](#-opérateurs-linq)
 - [Structure du projet](#-structure-du-projet)
-- [Captures d'écran](#-captures-décran)
 - [Auteur](#-auteur)
 
 ---
@@ -27,8 +25,12 @@ Application web complète de gestion des achats développée avec **ASP.NET Core
 ### Gestion des Produits
 - ✅ CRUD complet (Create, Read, Update, Delete)
 - ✅ Association avec Catégories et Marques
-- ✅ Recherche et filtrage
-- ✅ Affichage des détails produits
+- ✅ Recherche par nom de produit
+- ✅ **Filtrage par disponibilité** (Disponible/Indisponible)
+- ✅ **Tri par prix** (Ascendant/Descendant)
+- ✅ **Statistiques par catégorie** (GroupBy)
+- ✅ **Compteur de produits disponibles**
+- ✅ **Jointure LINQ** pour afficher produits avec catégories
 
 ### Authentification & Autorisation
 - 🔐 Système d'authentification complet avec ASP.NET Core Identity
@@ -52,6 +54,7 @@ Application web complète de gestion des achats développée avec **ASP.NET Core
 - **Base de données** : SQL Server (LocalDB)
 - **Authentification** : ASP.NET Core Identity
 - **Frontend** : Razor Views, Bootstrap 5
+- **LINQ** : Opérateurs avancés (Where, OrderBy, GroupBy, Join, Count)
 - **IDE** : Visual Studio 2022
 
 ---
@@ -98,7 +101,7 @@ Avant de commencer, assurez-vous d'avoir installé :
 ### 1. Cloner le repository
 
 ```bash
-git clone https://github.com/Mouad-D1/ASP.NET-MVC-Authentication-App
+git clone https://github.com/Mouad-D1/ASP.NET-MVC-Authentication-App.git
 cd ASP.NET-MVC-Authentication-App
 ```
 
@@ -141,7 +144,7 @@ dotnet run
 
 Ou appuyez sur **F5** dans Visual Studio.
 
-L'application sera accessible sur : `https://localhost:7109` (le port peut varier !)
+L'application sera accessible sur : `https://localhost:7109` (le port peut varier)
 
 ---
 
@@ -204,13 +207,81 @@ Les autorisations sont gérées via les attributs `[Authorize]` dans les contrô
 
 ---
 
+## 🔍 Opérateurs LINQ
+
+L'application utilise plusieurs opérateurs LINQ avancés pour manipuler les données :
+
+### Filtrage et Tri
+
+```csharp
+// Filtrer les produits disponibles
+var produitsDisponibles = produits.Where(p => p.Disponible == true);
+
+// Trier par prix croissant
+var produitsTriesAsc = produits.OrderBy(p => p.Prix);
+
+// Trier par prix décroissant
+var produitsTriesDesc = produits.OrderByDescending(p => p.Prix);
+```
+
+### Regroupement
+
+```csharp
+// Compter le nombre de produits par catégorie
+var statsParCategorie = _context.Produits
+    .GroupBy(p => p.Categorie.Nom)
+    .Select(g => new
+    {
+        Categorie = g.Key,
+        Total = g.Count()
+    });
+```
+
+### Jointure
+
+```csharp
+// Joindre Produits et Catégories
+var produitsAvecCategories =
+    from p in _context.Produits
+    join c in _context.Categories
+    on p.CategorieId equals c.CategorieId
+    select new
+    {
+        Produit = p.Nom,
+        Prix = p.Prix,
+        Categorie = c.Nom
+    };
+```
+
+### Agrégation
+
+```csharp
+// Compter le nombre de produits disponibles
+var nombreDisponibles = _context.Produits.Count(p => p.Disponible == true);
+```
+
+### Tableau récapitulatif des opérateurs LINQ
+
+| Opérateur | Syntaxe | Fonction | Exemple |
+|-----------|---------|----------|---------|
+| **Where** | `Where(p => condition)` | Filtrage conditionnel | `Where(p => p.Disponible)` |
+| **OrderBy** | `OrderBy(p => p.Prix)` | Tri croissant | `OrderBy(p => p.Prix)` |
+| **OrderByDescending** | `OrderByDescending(p => p.Prix)` | Tri décroissant | `OrderByDescending(p => p.Prix)` |
+| **GroupBy** | `GroupBy(p => p.CategorieId)` | Regroupement | `GroupBy(p => p.Categorie.Nom)` |
+| **Join** | `join c in Categories on ...` | Jointure entre tables | Voir exemple ci-dessus |
+| **Count** | `Count()` / `Count(p => condition)` | Nombre d'éléments | `Count(p => p.Disponible)` |
+| **Select** | `Select(p => p.Nom)` | Projection | `Select(p => new { p.Nom, p.Prix })` |
+| **Include** | `Include(p => p.Categorie)` | Chargement relations EF | `Include(p => p.Marque)` |
+
+---
+
 ## 📁 Structure du projet
 
 ```
 WebApplicationAchats/
 │
 ├── Controllers/
-│   ├── ProduitsController.cs       # Gestion des produits
+│   ├── ProduitsController.cs       # Gestion des produits avec LINQ
 │   ├── CategoriesController.cs     # Gestion des catégories
 │   ├── MarquesController.cs        # Gestion des marques
 │   ├── ClientsController.cs        # Gestion des clients
@@ -230,7 +301,7 @@ WebApplicationAchats/
 │
 ├── Views/
 │   ├── Produits/
-│   │   ├── Index.cshtml            # Liste des produits
+│   │   ├── Index.cshtml            # Liste avec filtres LINQ
 │   │   ├── Create.cshtml           # Créer un produit
 │   │   ├── Edit.cshtml             # Modifier un produit
 │   │   ├── Details.cshtml          # Détails d'un produit
@@ -256,10 +327,6 @@ WebApplicationAchats/
 
 ---
 
-
-
----
-
 ## 🎓 Concepts couverts
 
 Ce projet démontre la maîtrise de :
@@ -270,6 +337,9 @@ Ce projet démontre la maîtrise de :
 - ✅ Relations entre entités (One-to-Many, Many-to-Many)
 - ✅ ASP.NET Core Identity (authentification)
 - ✅ Gestion des rôles et autorisations
+- ✅ **Opérateurs LINQ avancés** (Where, OrderBy, GroupBy, Join, Count)
+- ✅ **Requêtes LINQ to Entities**
+- ✅ **Filtrage et tri dynamiques**
 - ✅ Razor Views et Tag Helpers
 - ✅ Scaffolding de contrôleurs et vues
 - ✅ Séparation des contextes de base de données
@@ -289,7 +359,13 @@ Les permissions sont définies au niveau de chaque action du contrôleur, permet
 Cette séparation améliore la sécurité et la maintenabilité.
 
 ### Création automatique des rôles
-Au démarrage de l'application, les rôles et les comptes admin/manager sont créés automatiquement si ils n'existent pas.
+Au démarrage de l'application, les rôles et les comptes admin/manager sont créés automatiquement s'ils n'existent pas.
+
+### Filtrage et tri dynamiques
+L'application permet de filtrer et trier les produits en temps réel grâce aux opérateurs LINQ et aux paramètres d'URL.
+
+### Statistiques en temps réel
+Les statistiques par catégorie sont calculées dynamiquement à chaque chargement de la page grâce à `GroupBy` et `Count`.
 
 ---
 
@@ -314,17 +390,21 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ## 👨‍💻 Auteur
 
-**Mouad** - Étudiant en développement .NET
+**Mouad Diouane** - Étudiant en développement .NET
 
 - GitHub: [@Mouad-D1](https://github.com/Mouad-D1)
 - LinkedIn: [Mouad Diouane](https://www.linkedin.com/in/mouad-diouane)
+- Email: mouaddiouane1@gmail.com
 
 ---
 
 ## 🙏 Remerciements
 
-- Mme. AIT BENNACER Fatima-Ezzahra pour l'encadrement et mon Binome Mohamed Eddih
+- Mme. AIT BENNACER Fatima-Ezzahra pour l'encadrement
+- Mohamed Eddih (Binôme)
+- EMSI - École Marocaine des Sciences de l'Ingénieur
 - La communauté ASP.NET Core
+
 ---
 
 ## 📚 Ressources utiles
@@ -332,6 +412,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 - [Documentation ASP.NET Core](https://docs.microsoft.com/aspnet/core)
 - [Entity Framework Core](https://docs.microsoft.com/ef/core)
 - [ASP.NET Core Identity](https://docs.microsoft.com/aspnet/core/security/authentication/identity)
+- [LINQ Query Expressions](https://docs.microsoft.com/dotnet/csharp/programming-guide/concepts/linq/query-expression-basics)
 - [Bootstrap 5](https://getbootstrap.com/docs/5.0)
 - [Razor Syntax](https://docs.microsoft.com/aspnet/core/mvc/views/razor)
 
@@ -349,6 +430,8 @@ Améliorations possibles pour ce projet :
 - [ ] Intégrer un système de paiement
 - [ ] Ajouter des tests unitaires et d'intégration
 - [ ] Déployer sur Azure ou AWS
+- [ ] Ajouter un export Excel/PDF des produits
+- [ ] Implémenter la recherche avancée avec filtres multiples
 
 ---
 
@@ -365,4 +448,4 @@ Pour toute question ou suggestion concernant ce projet :
 
 ---
 
-**Dernière mise à jour** : Décembre 2025
+**Dernière mise à jour** : Décembre 2025 - Ajout des fonctionnalités LINQ
